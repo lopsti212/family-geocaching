@@ -85,6 +85,7 @@ class QuestProvider extends ChangeNotifier {
     required QuestDifficulty difficulty,
     required Reward reward,
     DateTime? expiresAt,
+    double? hintRadius,
   }) async {
     _isLoading = true;
     _error = null;
@@ -105,6 +106,7 @@ class QuestProvider extends ChangeNotifier {
         status: QuestStatus.available,
         createdAt: DateTime.now(),
         expiresAt: expiresAt,
+        hintRadiusValue: hintRadius,
       );
 
       final createdQuest = await _supabaseService.createQuest(quest);

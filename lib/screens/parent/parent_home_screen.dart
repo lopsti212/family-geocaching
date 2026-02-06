@@ -167,6 +167,14 @@ class _QuestListView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Stats
+        _QuestStatsCard(
+          available: available.length,
+          active: inProgress.length,
+          completed: completed.length,
+        ),
+        const SizedBox(height: 16),
+
         if (inProgress.isNotEmpty) ...[
           _SectionHeader(title: 'Aktiv', count: inProgress.length),
           ...inProgress.map((q) => QuestCard(
@@ -230,6 +238,68 @@ class _SectionHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _QuestStatsCard extends StatelessWidget {
+  final int available;
+  final int active;
+  final int completed;
+
+  const _QuestStatsCard({
+    required this.available,
+    required this.active,
+    required this.completed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.primaryColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _StatItem(label: 'Verfügbar', value: available),
+            Container(height: 32, width: 1, color: Colors.white38),
+            _StatItem(label: 'Aktiv', value: active),
+            Container(height: 32, width: 1, color: Colors.white38),
+            _StatItem(label: 'Fertig', value: completed),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String label;
+  final int value;
+
+  const _StatItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          '$value',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }

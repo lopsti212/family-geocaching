@@ -159,6 +159,13 @@ class _QuestListView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Stats
+        _QuestStatsCard(
+          completed: completed.length,
+          open: available.length + inProgress.length,
+        ),
+        const SizedBox(height: 16),
+
         // Aktive Quests
         if (inProgress.isNotEmpty) ...[
           Text(
@@ -480,6 +487,65 @@ class _CompletedQuestCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _QuestStatsCard extends StatelessWidget {
+  final int completed;
+  final int open;
+
+  const _QuestStatsCard({required this.completed, required this.open});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.primaryColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _StatItem(label: 'Geschafft', value: completed),
+            Container(
+              height: 32,
+              width: 1,
+              color: Colors.white38,
+            ),
+            _StatItem(label: 'Offen', value: open),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String label;
+  final int value;
+
+  const _StatItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          '$value',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }

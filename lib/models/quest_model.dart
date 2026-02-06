@@ -75,6 +75,7 @@ class QuestModel {
   final DateTime? expiresAt;
   final DateTime? completedAt;
   final String? nfcTagId; // Optional NFC Tag
+  final double? hintRadiusValue; // Einstellbarer Hinweisradius für Level 2
 
   QuestModel({
     required this.id,
@@ -92,6 +93,7 @@ class QuestModel {
     this.expiresAt,
     this.completedAt,
     this.nfcTagId,
+    this.hintRadiusValue,
   });
 
   // Radius in Metern basierend auf Schwierigkeit
@@ -108,7 +110,7 @@ class QuestModel {
 
   // Hinweisradius für Level 2
   double get hintRadius {
-    return difficulty == QuestDifficulty.level2 ? 100.0 : 0.0;
+    return difficulty == QuestDifficulty.level2 ? (hintRadiusValue ?? 100.0) : 0.0;
   }
 
   factory QuestModel.fromJson(Map<String, dynamic> json) {
@@ -138,6 +140,7 @@ class QuestModel {
           ? DateTime.parse(json['completed_at'] as String)
           : null,
       nfcTagId: json['nfc_tag_id'] as String?,
+      hintRadiusValue: (json['hint_radius'] as num?)?.toDouble(),
     );
   }
 
@@ -158,6 +161,7 @@ class QuestModel {
       'expires_at': expiresAt?.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
       'nfc_tag_id': nfcTagId,
+      'hint_radius': hintRadiusValue,
     };
   }
 
@@ -177,6 +181,7 @@ class QuestModel {
     DateTime? expiresAt,
     DateTime? completedAt,
     String? nfcTagId,
+    double? hintRadiusValue,
   }) {
     return QuestModel(
       id: id ?? this.id,
@@ -194,6 +199,7 @@ class QuestModel {
       expiresAt: expiresAt ?? this.expiresAt,
       completedAt: completedAt ?? this.completedAt,
       nfcTagId: nfcTagId ?? this.nfcTagId,
+      hintRadiusValue: hintRadiusValue ?? this.hintRadiusValue,
     );
   }
 

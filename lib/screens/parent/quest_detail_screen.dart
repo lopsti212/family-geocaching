@@ -25,11 +25,10 @@ class QuestDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(quest.title),
         actions: [
-          if (quest.status == QuestStatus.available)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _showDeleteDialog(context, quest),
-            ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _showDeleteDialog(context, quest),
+          ),
         ],
       ),
       body: ListView(
@@ -196,11 +195,18 @@ class QuestDetailScreen extends StatelessWidget {
   }
 
   void _showDeleteDialog(BuildContext context, QuestModel quest) {
+    String message = 'Möchtest du "${quest.title}" wirklich löschen?';
+    if (quest.status == QuestStatus.inProgress) {
+      message += '\n\nAchtung: Diese Schatzsuche ist gerade aktiv!';
+    } else if (quest.status == QuestStatus.completed) {
+      message += '\n\nDiese Schatzsuche wurde bereits abgeschlossen.';
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Schatzsuche löschen?'),
-        content: Text('Möchtest du "${quest.title}" wirklich löschen?'),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

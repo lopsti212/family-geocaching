@@ -30,6 +30,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
   RewardType _rewardType = RewardType.screenTime;
   LatLng? _selectedLocation;
   bool _isLoadingLocation = true;
+  double _hintRadius = 100.0;
 
   @override
   void initState() {
@@ -93,6 +94,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
       longitude: _selectedLocation!.longitude,
       difficulty: _difficulty,
       reward: reward,
+      hintRadius: _difficulty == QuestDifficulty.level2 ? _hintRadius : null,
     );
 
     if (success && mounted) {
@@ -167,6 +169,26 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                     selected: _difficulty,
                     onChanged: (d) => setState(() => _difficulty = d),
                   ),
+                  if (_difficulty == QuestDifficulty.level2) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Text(
+                          'Hinweisradius: ${_hintRadius.round()}m',
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _hintRadius,
+                      min: 25,
+                      max: 500,
+                      divisions: 19,
+                      label: '${_hintRadius.round()}m',
+                      activeColor: AppTheme.primaryColor,
+                      onChanged: (v) => setState(() => _hintRadius = v),
+                    ),
+                  ],
                   const SizedBox(height: 24),
 
                   // Karte
@@ -176,41 +198,76 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    height: 250,
+                    height: 400,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: _selectedLocation!,
-                          initialZoom: 15,
-                          onTap: (tapPosition, point) {
-                            setState(() {
-                              _selectedLocation = point;
-                            });
-                          },
-                        ),
+                      child: Stack(
                         children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.familygeocaching.app',
+                          FlutterMap(
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: _selectedLocation!,
+                              initialZoom: 15,
+                              onTap: (tapPosition, point) {
+                                setState(() {
+                                  _selectedLocation = point;
+                                });
+                              },
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.familygeocaching.app',
+                              ),
+                              if (_selectedLocation != null)
+                                MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      point: _selectedLocation!,
+                                      width: 40,
+                                      height: 40,
+                                      child: const Icon(
+                                        Icons.location_pin,
+                                        color: AppTheme.errorColor,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
-                          if (_selectedLocation != null)
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: _selectedLocation!,
-                                  width: 40,
-                                  height: 40,
-                                  child: const Icon(
-                                    Icons.location_pin,
-                                    color: AppTheme.errorColor,
-                                    size: 40,
-                                  ),
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: Column(
+                              children: [
+                                FloatingActionButton.small(
+                                  heroTag: 'zoom_in',
+                                  onPressed: () {
+                                    final zoom = _mapController.camera.zoom;
+                                    _mapController.move(
+                                      _mapController.camera.center,
+                                      zoom + 1,
+                                    );
+                                  },
+                                  child: const Icon(Icons.add),
+                                ),
+                                const SizedBox(height: 4),
+                                FloatingActionButton.small(
+                                  heroTag: 'zoom_out',
+                                  onPressed: () {
+                                    final zoom = _mapController.camera.zoom;
+                                    _mapController.move(
+                                      _mapController.camera.center,
+                                      zoom - 1,
+                                    );
+                                  },
+                                  child: const Icon(Icons.remove),
                                 ),
                               ],
                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -348,7 +405,7 @@ class _DifficultySelector extends StatelessWidget {
                     d == QuestDifficulty.level1
                         ? 'Direkt'
                         : d == QuestDifficulty.level2
-                            ? '100m'
+                            ? 'Radius'
                             : 'Kompass',
                     style: TextStyle(
                       fontSize: 12,
