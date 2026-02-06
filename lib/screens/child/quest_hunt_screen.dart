@@ -323,6 +323,7 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
               CircleMarker(
                 point: targetLocation,
                 radius: quest.hintRadius,
+                useRadiusInMeter: true,
                 color: AppTheme.secondaryColor.withOpacity(0.2),
                 borderColor: AppTheme.secondaryColor,
                 borderStrokeWidth: 2,
