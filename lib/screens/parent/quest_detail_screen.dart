@@ -161,6 +161,138 @@ class QuestDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // Foto-Beweis (wenn vorhanden)
+          if (quest.photoUrl != null) ...[
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.photo_camera, color: Colors.amber[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Foto-Beweis',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                    child: Image.network(
+                      quest.photoUrl!,
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const SizedBox(
+                          height: 250,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const SizedBox(
+                          height: 250,
+                          child: Center(child: Icon(Icons.broken_image, size: 48)),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Foto-Beschreibung (wenn Foto erforderlich)
+          if (quest.requiresPhoto && quest.photoDescription != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.amber[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Foto-Aufgabe: ${quest.photoDescription}',
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Bestätigungs-Buttons bei pendingReview
+          if (quest.status == QuestStatus.pendingReview) ...[
+            Card(
+              color: Colors.amber.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.hourglass_top, color: Colors.amber[700]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Wartet auf deine Bestätigung',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.amber[800],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _showRejectDialog(context, quest),
+                            icon: const Icon(Icons.close),
+                            label: const Text('Ablehnen'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.errorColor,
+                              side: const BorderSide(color: AppTheme.errorColor),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _approveQuest(context, quest),
+                            icon: const Icon(Icons.check),
+                            label: const Text('Bestätigen'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Zeitstempel
           Card(
             child: Padding(
@@ -192,6 +324,54 @@ class QuestDetailScreen extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}.${date.month}.${date.year} um ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _approveQuest(BuildContext context, QuestModel quest) async {
+    final success = await context.read<QuestProvider>().approveQuest(
+      quest.id,
+      userId: quest.assignedTo,
+    );
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Quest bestätigt! XP wurden vergeben.'),
+          backgroundColor: AppTheme.primaryColor,
+        ),
+      );
+    }
+  }
+
+  void _showRejectDialog(BuildContext context, QuestModel quest) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Foto ablehnen?'),
+        content: const Text(
+          'Das Kind muss dann ein neues Foto machen. Die Quest wird wieder auf "Aktiv" gesetzt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await context.read<QuestProvider>().rejectQuest(quest.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Foto abgelehnt. Kind kann es erneut versuchen.'),
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Ablehnen'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDeleteDialog(BuildContext context, QuestModel quest) {
@@ -261,6 +441,11 @@ class _StatusChip extends StatelessWidget {
         color = Colors.grey;
         label = 'Abgelaufen';
         icon = Icons.timer_off;
+        break;
+      case QuestStatus.pendingReview:
+        color = Colors.amber;
+        label = 'Foto prüfen';
+        icon = Icons.photo_camera;
         break;
     }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -31,6 +32,9 @@ class QuestProvider extends ChangeNotifier {
 
   List<QuestModel> get inProgressQuests =>
       _quests.where((q) => q.status == QuestStatus.inProgress).toList();
+
+  List<QuestModel> get pendingReviewQuests =>
+      _quests.where((q) => q.status == QuestStatus.pendingReview).toList();
 
   // Streak für ein Kind berechnen
   StreakData getStreakForChild(String childId) {
@@ -98,6 +102,8 @@ class QuestProvider extends ChangeNotifier {
     required Reward reward,
     DateTime? expiresAt,
     double? hintRadius,
+    bool requiresPhoto = false,
+    String? photoDescription,
   }) async {
     _isLoading = true;
     _error = null;
@@ -119,6 +125,8 @@ class QuestProvider extends ChangeNotifier {
         createdAt: DateTime.now(),
         expiresAt: expiresAt,
         hintRadiusValue: hintRadius,
+        requiresPhoto: requiresPhoto,
+        photoDescription: photoDescription,
       );
 
       final createdQuest = await _supabaseService.createQuest(quest);
@@ -184,6 +192,83 @@ class QuestProvider extends ChangeNotifier {
           final xpGain = LevelSystem.xpForDifficulty(quest.difficulty);
           await _supabaseService.addXp(userId, xpGain);
         }
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Foto hochladen und Quest zur Überprüfung einreichen
+  Future<bool> submitQuestPhoto(String questId, File photo) async {
+    try {
+      final photoUrl = await _supabaseService.uploadQuestPhoto(questId, photo);
+      await _supabaseService.submitQuestForReview(questId, photoUrl);
+
+      final questIndex = _quests.indexWhere((q) => q.id == questId);
+      if (questIndex != -1) {
+        _quests[questIndex] = _quests[questIndex].copyWith(
+          status: QuestStatus.pendingReview,
+          photoUrl: photoUrl,
+        );
+        _selectedQuest = _quests[questIndex];
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Quest bestätigen (Eltern) - XP vergeben
+  Future<bool> approveQuest(String questId, {String? userId}) async {
+    try {
+      await _supabaseService.approveQuest(questId);
+
+      final questIndex = _quests.indexWhere((q) => q.id == questId);
+      if (questIndex != -1) {
+        final quest = _quests[questIndex];
+        _quests[questIndex] = quest.copyWith(
+          status: QuestStatus.completed,
+          completedAt: DateTime.now(),
+        );
+
+        // XP vergeben
+        final assignedTo = quest.assignedTo;
+        final targetUserId = userId ?? assignedTo;
+        if (targetUserId != null) {
+          final xpGain = LevelSystem.xpForDifficulty(quest.difficulty);
+          await _supabaseService.addXp(targetUserId, xpGain);
+        }
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Quest ablehnen (Eltern) - zurück auf inProgress
+  Future<bool> rejectQuest(String questId) async {
+    try {
+      await _supabaseService.rejectQuest(questId);
+
+      final questIndex = _quests.indexWhere((q) => q.id == questId);
+      if (questIndex != -1) {
+        _quests[questIndex] = _quests[questIndex].copyWith(
+          status: QuestStatus.inProgress,
+          photoUrl: null,
+        );
       }
 
       notifyListeners();

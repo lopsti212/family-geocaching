@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -145,12 +147,20 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
 
   void _showSuccessDialog() {
     setState(() => _showCelebration = true);
+    final quest = _getQuest();
 
+    if (quest != null && quest.requiresPhoto) {
+      _showPhotoRequiredDialog(quest);
+    } else {
+      _showDirectCompleteDialog(quest);
+    }
+  }
+
+  void _showDirectCompleteDialog(QuestModel? quest) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        final quest = _getQuest();
         return AlertDialog(
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -169,7 +179,7 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Du hast den Schatz gefunden!',
                 textAlign: TextAlign.center,
               ),
@@ -205,7 +215,6 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
                   userId: userId,
                 );
                 if (ctx.mounted) {
-                  // User-Profil aktualisieren (XP)
                   await context.read<AuthProvider>().refreshUser();
                   Navigator.pop(ctx);
                   context.go('/child');
@@ -216,6 +225,163 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
                 foregroundColor: Colors.white,
               ),
               child: const Text('Super!'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPhotoRequiredDialog(QuestModel quest) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        bool isUploading = false;
+
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.photo_camera,
+                    size: 80,
+                    color: AppTheme.secondaryColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Schatz gefunden!',
+                    style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Jetzt noch ein Foto machen:',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            quest.photoDescription ?? 'Mache ein Foto als Beweis',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isUploading) ...[
+                    const SizedBox(height: 16),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 8),
+                    const Text('Foto wird hochgeladen...'),
+                  ],
+                ],
+              ),
+              actions: [
+                if (!isUploading)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final photo = await picker.pickImage(
+                        source: ImageSource.camera,
+                        maxWidth: 1200,
+                        maxHeight: 1200,
+                        imageQuality: 80,
+                      );
+
+                      if (photo == null) return;
+
+                      setDialogState(() => isUploading = true);
+
+                      final success = await context
+                          .read<QuestProvider>()
+                          .submitQuestPhoto(quest.id, File(photo.path));
+
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                        if (success) {
+                          _showPhotoUploadedConfirmation();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Fehler beim Hochladen des Fotos'),
+                              backgroundColor: AppTheme.errorColor,
+                            ),
+                          );
+                          context.go('/child');
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Foto machen'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showPhotoUploadedConfirmation() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle,
+                size: 80,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Foto hochgeladen!',
+                style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Warte auf die Bestätigung deiner Eltern.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.go('/child');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('OK'),
             ),
           ],
         );

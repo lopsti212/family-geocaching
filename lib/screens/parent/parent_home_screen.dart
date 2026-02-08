@@ -162,6 +162,7 @@ class _QuestListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final available = quests.where((q) => q.status == QuestStatus.available).toList();
     final inProgress = quests.where((q) => q.status == QuestStatus.inProgress).toList();
+    final pendingReview = quests.where((q) => q.status == QuestStatus.pendingReview).toList();
     final completed = quests.where((q) => q.status == QuestStatus.completed).toList();
 
     return ListView(
@@ -172,8 +173,19 @@ class _QuestListView extends StatelessWidget {
           available: available.length,
           active: inProgress.length,
           completed: completed.length,
+          pendingReview: pendingReview.length,
         ),
         const SizedBox(height: 16),
+
+        // Foto-Prüfung Banner
+        if (pendingReview.isNotEmpty) ...[
+          _SectionHeader(title: 'Foto prüfen', count: pendingReview.length),
+          ...pendingReview.map((q) => QuestCard(
+                quest: q,
+                onTap: () => context.push('/parent/quest/${q.id}'),
+              )),
+          const SizedBox(height: 16),
+        ],
 
         if (inProgress.isNotEmpty) ...[
           _SectionHeader(title: 'Aktiv', count: inProgress.length),
@@ -246,11 +258,13 @@ class _QuestStatsCard extends StatelessWidget {
   final int available;
   final int active;
   final int completed;
+  final int pendingReview;
 
   const _QuestStatsCard({
     required this.available,
     required this.active,
     required this.completed,
+    this.pendingReview = 0,
   });
 
   @override
@@ -268,6 +282,10 @@ class _QuestStatsCard extends StatelessWidget {
           Container(height: 32, width: 1, color: Colors.white30),
           _StatItem(label: 'Aktiv', value: active),
           Container(height: 32, width: 1, color: Colors.white30),
+          if (pendingReview > 0) ...[
+            _StatItem(label: 'Prüfen', value: pendingReview),
+            Container(height: 32, width: 1, color: Colors.white30),
+          ],
           _StatItem(label: 'Fertig', value: completed),
         ],
       ),

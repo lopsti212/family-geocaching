@@ -31,6 +31,8 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
   LatLng? _selectedLocation;
   bool _isLoadingLocation = true;
   double _hintRadius = 100.0;
+  bool _requiresPhoto = false;
+  final _photoDescriptionController = TextEditingController();
 
   @override
   void initState() {
@@ -60,6 +62,7 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
     _descriptionController.dispose();
     _rewardValueController.dispose();
     _customRewardController.dispose();
+    _photoDescriptionController.dispose();
     super.dispose();
   }
 
@@ -95,6 +98,8 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
       difficulty: _difficulty,
       reward: reward,
       hintRadius: _difficulty == QuestDifficulty.level2 ? _hintRadius : null,
+      requiresPhoto: _requiresPhoto,
+      photoDescription: _requiresPhoto ? _photoDescriptionController.text.trim() : null,
     );
 
     if (success && mounted) {
@@ -327,6 +332,42 @@ class _CreateQuestScreenState extends State<CreateQuestScreen> {
                         return null;
                       },
                     ),
+                  const SizedBox(height: 24),
+
+                  // Foto erforderlich
+                  Text(
+                    'Foto am Ziel',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    title: const Text('Foto erforderlich'),
+                    subtitle: const Text(
+                      'Kind muss am Ziel ein Foto machen',
+                    ),
+                    value: _requiresPhoto,
+                    onChanged: (v) => setState(() => _requiresPhoto = v),
+                    activeColor: AppTheme.primaryColor,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  if (_requiresPhoto) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _photoDescriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Was soll fotografiert werden?',
+                        hintText: 'z.B. "Den Brunnen im Park"',
+                        prefixIcon: Icon(Icons.photo_camera),
+                      ),
+                      validator: (value) {
+                        if (_requiresPhoto &&
+                            (value == null || value.trim().isEmpty)) {
+                          return 'Bitte beschreibe, was fotografiert werden soll';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 32),
 
                   // Erstellen Button

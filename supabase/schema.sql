@@ -42,12 +42,15 @@ CREATE TABLE public.quests (
     target_longitude DOUBLE PRECISION NOT NULL,
     difficulty TEXT NOT NULL CHECK (difficulty IN ('level1', 'level2', 'level3', 'level4')),
     reward JSONB NOT NULL,
-    status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'inProgress', 'completed', 'expired')),
+    status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'inProgress', 'completed', 'expired', 'pendingReview')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
     nfc_tag_id TEXT,
-    hint_radius DOUBLE PRECISION
+    hint_radius DOUBLE PRECISION,
+    requires_photo BOOLEAN DEFAULT false,
+    photo_description TEXT,
+    photo_url TEXT
 );
 
 -- Indizes für bessere Performance

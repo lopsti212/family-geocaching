@@ -10,6 +10,7 @@ enum QuestStatus {
   inProgress,
   completed,
   expired,
+  pendingReview,
 }
 
 enum RewardType {
@@ -77,6 +78,9 @@ class QuestModel {
   final DateTime? completedAt;
   final String? nfcTagId; // Optional NFC Tag
   final double? hintRadiusValue; // Einstellbarer Hinweisradius für Level 2
+  final bool requiresPhoto; // Foto am Ziel erforderlich?
+  final String? photoDescription; // Was soll fotografiert werden?
+  final String? photoUrl; // URL des hochgeladenen Fotos
 
   QuestModel({
     required this.id,
@@ -95,6 +99,9 @@ class QuestModel {
     this.completedAt,
     this.nfcTagId,
     this.hintRadiusValue,
+    this.requiresPhoto = false,
+    this.photoDescription,
+    this.photoUrl,
   });
 
   // Radius in Metern basierend auf Schwierigkeit
@@ -144,6 +151,9 @@ class QuestModel {
           : null,
       nfcTagId: json['nfc_tag_id'] as String?,
       hintRadiusValue: (json['hint_radius'] as num?)?.toDouble(),
+      requiresPhoto: json['requires_photo'] as bool? ?? false,
+      photoDescription: json['photo_description'] as String?,
+      photoUrl: json['photo_url'] as String?,
     );
   }
 
@@ -165,6 +175,9 @@ class QuestModel {
       'completed_at': completedAt?.toIso8601String(),
       'nfc_tag_id': nfcTagId,
       'hint_radius': hintRadiusValue,
+      'requires_photo': requiresPhoto,
+      'photo_description': photoDescription,
+      'photo_url': photoUrl,
     };
   }
 
@@ -185,6 +198,9 @@ class QuestModel {
     DateTime? completedAt,
     String? nfcTagId,
     double? hintRadiusValue,
+    bool? requiresPhoto,
+    String? photoDescription,
+    String? photoUrl,
   }) {
     return QuestModel(
       id: id ?? this.id,
@@ -203,6 +219,9 @@ class QuestModel {
       completedAt: completedAt ?? this.completedAt,
       nfcTagId: nfcTagId ?? this.nfcTagId,
       hintRadiusValue: hintRadiusValue ?? this.hintRadiusValue,
+      requiresPhoto: requiresPhoto ?? this.requiresPhoto,
+      photoDescription: photoDescription ?? this.photoDescription,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 

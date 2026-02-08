@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/user_model.dart';
@@ -195,7 +197,7 @@ class SupabaseService {
         .from(SupabaseConfig.questsTable)
         .select()
         .eq('family_id', familyId)
-        .inFilter('status', [QuestStatus.available.name, QuestStatus.inProgress.name, QuestStatus.completed.name])
+        .inFilter('status', [QuestStatus.available.name, QuestStatus.inProgress.name, QuestStatus.completed.name, QuestStatus.pendingReview.name])
         .order('created_at', ascending: false);
 
     return (response as List)
@@ -221,6 +223,55 @@ class SupabaseService {
         .update({
           'status': QuestStatus.completed.name,
           'completed_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', questId);
+  }
+
+  // Foto hochladen zu Supabase Storage
+  Future<String> uploadQuestPhoto(String questId, File imageFile) async {
+    final fileExt = imageFile.path.split('.').last;
+    final filePath = '$questId.$fileExt';
+
+    await client.storage
+        .from('quest-photos')
+        .upload(filePath, imageFile, fileOptions: const FileOptions(upsert: true));
+
+    final publicUrl = client.storage
+        .from('quest-photos')
+        .getPublicUrl(filePath);
+
+    return publicUrl;
+  }
+
+  // Quest zur Überprüfung einreichen (nach Foto-Upload)
+  Future<void> submitQuestForReview(String questId, String photoUrl) async {
+    await client
+        .from(SupabaseConfig.questsTable)
+        .update({
+          'status': QuestStatus.pendingReview.name,
+          'photo_url': photoUrl,
+        })
+        .eq('id', questId);
+  }
+
+  // Quest bestätigen (Eltern)
+  Future<void> approveQuest(String questId) async {
+    await client
+        .from(SupabaseConfig.questsTable)
+        .update({
+          'status': QuestStatus.completed.name,
+          'completed_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', questId);
+  }
+
+  // Quest ablehnen (Eltern) - zurück auf inProgress
+  Future<void> rejectQuest(String questId) async {
+    await client
+        .from(SupabaseConfig.questsTable)
+        .update({
+          'status': QuestStatus.inProgress.name,
+          'photo_url': null,
         })
         .eq('id', questId);
   }

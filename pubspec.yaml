@@ -29,6 +29,9 @@ dependencies:
   # Compass
   flutter_compass: ^0.8.0
 
+  # Camera / Photos
+  image_picker: ^1.1.2
+
   # NFC (für später)
   # nfc_manager: ^3.5.0
 

@@ -156,6 +156,7 @@ class _QuestListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final available = quests.where((q) => q.status == QuestStatus.available).toList();
     final inProgress = quests.where((q) => q.status == QuestStatus.inProgress).toList();
+    final pendingReview = quests.where((q) => q.status == QuestStatus.pendingReview).toList();
     final completed = quests.where((q) => q.status == QuestStatus.completed).toList();
 
     final authProvider = context.read<AuthProvider>();
@@ -182,6 +183,19 @@ class _QuestListView extends StatelessWidget {
           _LevelProgressCard(xp: authProvider.user!.xp),
         ],
         const SizedBox(height: 16),
+
+        // Warten auf Bestätigung
+        if (pendingReview.isNotEmpty) ...[
+          Text(
+            'Warten auf Bestätigung',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...pendingReview.map((q) => _PendingReviewCard(quest: q)),
+          const SizedBox(height: 24),
+        ],
 
         // Aktive Quests
         if (inProgress.isNotEmpty) ...[
@@ -503,6 +517,55 @@ class _CompletedQuestCard extends StatelessWidget {
               ),
             ),
             const Icon(Icons.check_circle, color: Colors.blue),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingReviewCard extends StatelessWidget {
+  final QuestModel quest;
+
+  const _PendingReviewCard({required this.quest});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: Colors.amber.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.hourglass_top,
+                color: Colors.amber[800],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    quest.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    'Warte auf Bestätigung...',
+                    style: TextStyle(color: Colors.amber[800], fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.photo_camera, color: Colors.amber[700]),
           ],
         ),
       ),

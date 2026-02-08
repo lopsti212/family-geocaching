@@ -169,6 +169,11 @@ class _StatusBadge extends StatelessWidget {
         label = 'Abgelaufen';
         icon = Icons.timer_off;
         break;
+      case QuestStatus.pendingReview:
+        color = Colors.amber;
+        label = 'Prüfen';
+        icon = Icons.photo_camera;
+        break;
     }
 
     return Container(
