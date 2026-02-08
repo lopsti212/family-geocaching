@@ -80,6 +80,23 @@ class SupabaseService {
         .toList();
   }
 
+  // XP hinzufügen (für Levelsystem)
+  Future<void> addXp(String userId, int xpAmount) async {
+    final userData = await client
+        .from(SupabaseConfig.usersTable)
+        .select('xp')
+        .eq('id', userId)
+        .single();
+
+    final currentXp = (userData['xp'] as int?) ?? 0;
+    final newXp = currentXp + xpAmount;
+
+    await client
+        .from(SupabaseConfig.usersTable)
+        .update({'xp': newXp})
+        .eq('id', userId);
+  }
+
   // ============ FAMILIES ============
 
   Future<FamilyModel> createFamily(String name, String userId) async {

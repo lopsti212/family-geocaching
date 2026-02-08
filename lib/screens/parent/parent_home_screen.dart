@@ -225,7 +225,7 @@ class _SectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -255,20 +255,21 @@ class _QuestStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: AppTheme.primaryColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _StatItem(label: 'Verfügbar', value: available),
-            Container(height: 32, width: 1, color: Colors.white38),
-            _StatItem(label: 'Aktiv', value: active),
-            Container(height: 32, width: 1, color: Colors.white38),
-            _StatItem(label: 'Fertig', value: completed),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StatItem(label: 'Verfügbar', value: available),
+          Container(height: 32, width: 1, color: Colors.white30),
+          _StatItem(label: 'Aktiv', value: active),
+          Container(height: 32, width: 1, color: Colors.white30),
+          _StatItem(label: 'Fertig', value: completed),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ enum QuestDifficulty {
   level1, // Direkter Ort wird angezeigt
   level2, // Umkreis ~100m
   level3, // Nur Kompass
+  level4, // Nur Entfernung (Blind)
 }
 
 enum QuestStatus {
@@ -105,6 +106,8 @@ class QuestModel {
         return 15.0; // 15m - muss im 100m Umkreis suchen
       case QuestDifficulty.level3:
         return 10.0; // 10m - nur Kompass, muss genau sein
+      case QuestDifficulty.level4:
+        return 8.0; // 8m - nur Entfernung, extrem schwer
     }
   }
 
@@ -211,6 +214,8 @@ class QuestModel {
         return 'Stufe 2 - Mittel';
       case QuestDifficulty.level3:
         return 'Stufe 3 - Schwer';
+      case QuestDifficulty.level4:
+        return 'Stufe 4 - Extrem';
     }
   }
 }

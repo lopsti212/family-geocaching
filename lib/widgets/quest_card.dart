@@ -19,11 +19,18 @@ class QuestCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(color: difficultyColor, width: 4),
+              ),
+            ),
+            padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -111,6 +118,7 @@ class QuestCard extends StatelessWidget {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -123,6 +131,8 @@ class QuestCard extends StatelessWidget {
         return Icons.radar;
       case QuestDifficulty.level3:
         return Icons.explore;
+      case QuestDifficulty.level4:
+        return Icons.visibility_off;
     }
   }
 }

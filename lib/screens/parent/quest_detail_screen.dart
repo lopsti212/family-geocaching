@@ -293,6 +293,9 @@ class _DifficultyChip extends StatelessWidget {
       case QuestDifficulty.level3:
         label = 'Stufe 3';
         break;
+      case QuestDifficulty.level4:
+        label = 'Stufe 4';
+        break;
     }
 
     return Chip(

@@ -45,13 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (success && mounted) {
       // Nach Registrierung zur Familieneinrichtung
       context.go('/family');
-    } else if (mounted && authProvider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.error!),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
     }
   }
 
@@ -190,7 +183,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+
+                // Fehleranzeige
+                if (authProvider.error != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.errorColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            authProvider.error!,
+                            style: const TextStyle(color: AppTheme.errorColor, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 16),
 
                 // Register Button
                 ElevatedButton(

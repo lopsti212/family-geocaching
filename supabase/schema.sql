@@ -11,7 +11,9 @@ CREATE TABLE public.users (
     name TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('parent', 'child')),
     family_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1
 );
 
 -- Families Tabelle
@@ -38,13 +40,14 @@ CREATE TABLE public.quests (
     family_id UUID NOT NULL REFERENCES public.families(id),
     target_latitude DOUBLE PRECISION NOT NULL,
     target_longitude DOUBLE PRECISION NOT NULL,
-    difficulty TEXT NOT NULL CHECK (difficulty IN ('level1', 'level2', 'level3')),
+    difficulty TEXT NOT NULL CHECK (difficulty IN ('level1', 'level2', 'level3', 'level4')),
     reward JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'inProgress', 'completed', 'expired')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
-    nfc_tag_id TEXT
+    nfc_tag_id TEXT,
+    hint_radius DOUBLE PRECISION
 );
 
 -- Indizes für bessere Performance

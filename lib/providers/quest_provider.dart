@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../models/quest_model.dart';
 import '../services/supabase_service.dart';
+import '../utils/level_system.dart';
+import '../utils/streak_calculator.dart';
 
 class QuestProvider extends ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
@@ -29,6 +31,16 @@ class QuestProvider extends ChangeNotifier {
 
   List<QuestModel> get inProgressQuests =>
       _quests.where((q) => q.status == QuestStatus.inProgress).toList();
+
+  // Streak für ein Kind berechnen
+  StreakData getStreakForChild(String childId) {
+    final childCompleted = _quests
+        .where((q) =>
+            q.status == QuestStatus.completed &&
+            (q.assignedTo == childId || q.assignedTo == null))
+        .toList();
+    return StreakCalculator.calculate(childCompleted);
+  }
 
   // Quests für eine Familie laden
   Future<void> loadQuests(String familyId) async {
@@ -154,17 +166,24 @@ class QuestProvider extends ChangeNotifier {
   }
 
   // Quest abschließen (Kind hat Ziel erreicht)
-  Future<bool> completeQuest(String questId) async {
+  Future<bool> completeQuest(String questId, {String? userId}) async {
     try {
       await _supabaseService.completeQuest(questId);
 
       final questIndex = _quests.indexWhere((q) => q.id == questId);
       if (questIndex != -1) {
-        _quests[questIndex] = _quests[questIndex].copyWith(
+        final quest = _quests[questIndex];
+        _quests[questIndex] = quest.copyWith(
           status: QuestStatus.completed,
           completedAt: DateTime.now(),
         );
         _selectedQuest = _quests[questIndex];
+
+        // XP vergeben
+        if (userId != null) {
+          final xpGain = LevelSystem.xpForDifficulty(quest.difficulty);
+          await _supabaseService.addXp(userId, xpGain);
+        }
       }
 
       notifyListeners();

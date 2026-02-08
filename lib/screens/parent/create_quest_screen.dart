@@ -379,9 +379,9 @@ class _DifficultySelector extends StatelessWidget {
             onTap: () => onChanged(d),
             child: Container(
               margin: EdgeInsets.only(
-                right: d != QuestDifficulty.level3 ? 8 : 0,
+                right: d != QuestDifficulty.values.last ? 8 : 0,
               ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected ? color.withOpacity(0.2) : Colors.white,
                 border: Border.all(
@@ -397,7 +397,9 @@ class _DifficultySelector extends StatelessWidget {
                         ? Icons.looks_one
                         : d == QuestDifficulty.level2
                             ? Icons.looks_two
-                            : Icons.looks_3,
+                            : d == QuestDifficulty.level3
+                                ? Icons.looks_3
+                                : Icons.looks_4,
                     color: isSelected ? color : Colors.grey,
                   ),
                   const SizedBox(height: 4),
@@ -406,9 +408,11 @@ class _DifficultySelector extends StatelessWidget {
                         ? 'Direkt'
                         : d == QuestDifficulty.level2
                             ? 'Radius'
-                            : 'Kompass',
+                            : d == QuestDifficulty.level3
+                                ? 'Kompass'
+                                : 'Blind',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected ? color : Colors.grey[700],

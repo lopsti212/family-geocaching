@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/quest_provider.dart';
+import '../../utils/level_system.dart';
+import '../../utils/streak_calculator.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -60,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
                     backgroundColor: (user?.role == UserRole.parent
                             ? AppTheme.primaryColor
                             : AppTheme.secondaryColor)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                   ),
                 ],
               ),
@@ -70,34 +73,106 @@ class ProfileScreen extends StatelessWidget {
 
           // Statistiken (nur für Kinder)
           if (user?.role == UserRole.child) ...[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.emoji_events, color: AppTheme.secondaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Deine Erfolge',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Hier könnten Statistiken stehen
-                    Center(
-                      child: Text(
-                        'Statistiken kommen bald!',
-                        style: TextStyle(color: Colors.grey[600]),
+            Builder(builder: (context) {
+              final questProvider = context.watch<QuestProvider>();
+              final streak = user != null
+                  ? questProvider.getStreakForChild(user.id)
+                  : StreakData(currentStreak: 0, longestStreak: 0);
+
+              final currentLevel = LevelSystem.getLevelForXp(user!.xp);
+              final nextLevel = LevelSystem.getNextLevel(user.xp);
+              final progress = LevelSystem.progressToNextLevel(user.xp);
+
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.emoji_events, color: AppTheme.secondaryColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Deine Erfolge',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+
+                      // Level-Anzeige
+                      Center(
+                        child: Column(
+                          children: [
+                            Icon(currentLevel.icon, size: 40, color: AppTheme.primaryColor),
+                            const SizedBox(height: 4),
+                            Text(
+                              currentLevel.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Level ${currentLevel.level}',
+                              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // XP-Fortschrittsbalken
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.grey[200],
+                          color: AppTheme.primaryColor,
+                          minHeight: 8,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Center(
+                        child: Text(
+                          nextLevel != null
+                              ? '${user.xp} / ${nextLevel.xpRequired} XP'
+                              : '${user.xp} XP - Max Level!',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Streak-Stats
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _AchievementStat(
+                            icon: Icons.local_fire_department,
+                            value: '${streak.currentStreak}',
+                            label: 'Tage in Folge',
+                            color: Colors.deepOrange,
+                          ),
+                          _AchievementStat(
+                            icon: Icons.emoji_events,
+                            value: '${streak.longestStreak}',
+                            label: 'Längste Serie',
+                            color: AppTheme.secondaryColor,
+                          ),
+                          _AchievementStat(
+                            icon: Icons.star,
+                            value: '${user.xp}',
+                            label: 'XP gesamt',
+                            color: AppTheme.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
             const SizedBox(height: 16),
           ],
 
@@ -210,6 +285,42 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AchievementStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _AchievementStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 32, color: color),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+      ],
     );
   }
 }

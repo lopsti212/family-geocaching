@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 import '../models/user_model.dart';
 import '../models/family_model.dart';
 import '../services/supabase_service.dart';
+import '../utils/auth_error_handler.dart';
 
 class AuthProvider extends ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
@@ -94,7 +95,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = e.toString();
+      _error = AuthErrorHandler.parse(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -128,11 +129,16 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = e.toString();
+      _error = AuthErrorHandler.parse(e);
       _isLoading = false;
       notifyListeners();
       return false;
     }
+  }
+
+  // Profil aktualisieren (z.B. nach XP-Vergabe)
+  Future<void> refreshUser() async {
+    await _loadUserProfile();
   }
 
   // Logout

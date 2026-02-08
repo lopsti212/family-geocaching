@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
 import '../../models/quest_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/quest_provider.dart';
 import '../../services/location_service.dart';
 
@@ -198,8 +199,14 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
           actions: [
             ElevatedButton(
               onPressed: () async {
-                await context.read<QuestProvider>().completeQuest(widget.questId);
+                final userId = context.read<AuthProvider>().user?.id;
+                await context.read<QuestProvider>().completeQuest(
+                  widget.questId,
+                  userId: userId,
+                );
                 if (ctx.mounted) {
+                  // User-Profil aktualisieren (XP)
+                  await context.read<AuthProvider>().refreshUser();
                   Navigator.pop(ctx);
                   context.go('/child');
                 }
@@ -293,6 +300,8 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
         return _buildMapView(quest, showExactLocation: false);
       case QuestDifficulty.level3:
         return _buildCompassView(quest);
+      case QuestDifficulty.level4:
+        return _buildDistanceOnlyView(quest);
     }
   }
 
@@ -478,6 +487,114 @@ class _QuestHuntScreenState extends State<QuestHuntScreen>
                     shape: BoxShape.circle,
                     color: Colors.white,
                   ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+          // Hinweis basierend auf Distanz
+          if (_distanceToTarget != null) _buildDistanceHint(),
+        ],
+      ),
+    );
+  }
+
+  // Stufe 4: Nur Entfernung + Kompassrose ohne Richtungspfeil
+  Widget _buildDistanceOnlyView(QuestModel quest) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Nur Entfernung',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Finde den Schatz nur mit der Entfernung!',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 32),
+
+          // Kompassrose mit Entfernung in der Mitte
+          SizedBox(
+            width: 250,
+            height: 250,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Hintergrund
+                Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey[100],
+                    border: Border.all(color: Colors.grey[300]!, width: 3),
+                  ),
+                ),
+
+                // Kompassrose (dreht sich mit echtem Kompass)
+                ...List.generate(8, (index) {
+                  final angle = index * 45.0;
+                  final labels = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
+                  return Transform.rotate(
+                    angle: angle * pi / 180 - (_compassHeading ?? 0) * pi / 180,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 15),
+                        child: Text(
+                          labels[index],
+                          style: TextStyle(
+                            fontWeight: index == 0
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: index == 0 ? Colors.red : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+
+                // Große Entfernungsanzeige in der Mitte
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: Text(
+                            _distanceToTarget != null
+                                ? (_distanceToTarget! >= 1000
+                                    ? '${(_distanceToTarget! / 1000).toStringAsFixed(1)} km'
+                                    : '${_distanceToTarget!.toInt()} m')
+                                : '...',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.getDifficultyColor(4),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Entfernung',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

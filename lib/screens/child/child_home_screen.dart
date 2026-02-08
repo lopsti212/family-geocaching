@@ -6,6 +6,8 @@ import '../../config/theme.dart';
 import '../../models/quest_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/quest_provider.dart';
+import '../../utils/level_system.dart';
+import '../../utils/streak_calculator.dart';
 import '../../widgets/quest_card.dart';
 
 class ChildHomeScreen extends StatefulWidget {
@@ -156,6 +158,12 @@ class _QuestListView extends StatelessWidget {
     final inProgress = quests.where((q) => q.status == QuestStatus.inProgress).toList();
     final completed = quests.where((q) => q.status == QuestStatus.completed).toList();
 
+    final authProvider = context.read<AuthProvider>();
+    final questProvider = context.read<QuestProvider>();
+    final streak = authProvider.user != null
+        ? questProvider.getStreakForChild(authProvider.user!.id)
+        : StreakData(currentStreak: 0, longestStreak: 0);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -164,6 +172,15 @@ class _QuestListView extends StatelessWidget {
           completed: completed.length,
           open: available.length + inProgress.length,
         ),
+        const SizedBox(height: 12),
+
+        // Streak-Banner
+        if (streak.currentStreak > 0 || streak.longestStreak > 0)
+          _StreakBanner(streak: streak),
+        if (authProvider.user != null) ...[
+          const SizedBox(height: 12),
+          _LevelProgressCard(xp: authProvider.user!.xp),
+        ],
         const SizedBox(height: 16),
 
         // Aktive Quests
@@ -327,7 +344,9 @@ class _ChildQuestCard extends StatelessWidget {
                           ? Icons.location_on
                           : quest.difficulty == QuestDifficulty.level2
                               ? Icons.radar
-                              : Icons.explore,
+                              : quest.difficulty == QuestDifficulty.level3
+                                  ? Icons.explore
+                                  : Icons.visibility_off,
                       color: difficultyColor,
                     ),
                     Text(
@@ -499,22 +518,23 @@ class _QuestStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: AppTheme.primaryColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _StatItem(label: 'Geschafft', value: completed),
-            Container(
-              height: 32,
-              width: 1,
-              color: Colors.white38,
-            ),
-            _StatItem(label: 'Offen', value: open),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StatItem(label: 'Geschafft', value: completed),
+          Container(
+            height: 32,
+            width: 1,
+            color: Colors.white30,
+          ),
+          _StatItem(label: 'Offen', value: open),
+        ],
       ),
     );
   }
@@ -546,6 +566,140 @@ class _StatItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LevelProgressCard extends StatelessWidget {
+  final int xp;
+
+  const _LevelProgressCard({required this.xp});
+
+  @override
+  Widget build(BuildContext context) {
+    final currentLevel = LevelSystem.getLevelForXp(xp);
+    final nextLevel = LevelSystem.getNextLevel(xp);
+    final progress = LevelSystem.progressToNextLevel(xp);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          // Level-Icon
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(currentLevel.icon, color: AppTheme.primaryColor, size: 28),
+          ),
+          const SizedBox(width: 12),
+          // Level-Info + Progress
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      currentLevel.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '$xp XP',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.grey[200],
+                    color: AppTheme.primaryColor,
+                    minHeight: 6,
+                  ),
+                ),
+                if (nextLevel != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Nächstes Level: ${nextLevel.name} (${nextLevel.xpRequired} XP)',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+                ] else
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Max Level erreicht!',
+                      style: TextStyle(fontSize: 11, color: AppTheme.primaryColor),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakBanner extends StatelessWidget {
+  final StreakData streak;
+
+  const _StreakBanner({required this.streak});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (streak.currentStreak > 0)
+                  Text(
+                    '${streak.currentStreak} ${streak.currentStreak == 1 ? 'Tag' : 'Tage'} in Folge!',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.deepOrange,
+                    ),
+                  ),
+                if (streak.longestStreak > 0)
+                  Text(
+                    'Längste Serie: ${streak.longestStreak} ${streak.longestStreak == 1 ? 'Tag' : 'Tage'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
