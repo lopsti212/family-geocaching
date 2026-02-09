@@ -151,6 +151,44 @@ class SupabaseService {
     return code;
   }
 
+  // ============ ACCOUNT LÖSCHEN ============
+
+  Future<void> deleteUserAccount(String userId) async {
+    // 1. Alle Quests des Users löschen (erstellt von)
+    final userQuests = await client
+        .from(SupabaseConfig.questsTable)
+        .select('id, photo_url')
+        .eq('created_by', userId);
+
+    for (final quest in userQuests) {
+      // Foto aus Storage löschen falls vorhanden
+      if (quest['photo_url'] != null) {
+        final questId = quest['id'] as String;
+        try {
+          await client.storage.from('quest-photos').remove(['$questId.jpg']);
+        } catch (_) {}
+      }
+    }
+
+    // Quests löschen die der User erstellt hat
+    await client
+        .from(SupabaseConfig.questsTable)
+        .delete()
+        .eq('created_by', userId);
+
+    // 2. Quests zurücksetzen die dem User zugewiesen waren
+    await client
+        .from(SupabaseConfig.questsTable)
+        .update({'assigned_to': null, 'status': 'available'})
+        .eq('assigned_to', userId);
+
+    // 3. User-Profil löschen
+    await client
+        .from(SupabaseConfig.usersTable)
+        .delete()
+        .eq('id', userId);
+  }
+
   // ============ QUESTS ============
 
   Future<QuestModel> createQuest(QuestModel quest) async {

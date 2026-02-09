@@ -237,9 +237,7 @@ class ProfileScreen extends StatelessWidget {
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: const Text('Datenschutz'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Datenschutz-Seite
-                  },
+                  onTap: () => context.push('/privacy'),
                 ),
               ],
             ),
@@ -282,6 +280,59 @@ class ProfileScreen extends StatelessWidget {
             ),
             icon: const Icon(Icons.logout),
             label: const Text('Abmelden'),
+          ),
+          const SizedBox(height: 12),
+
+          // Konto löschen
+          TextButton.icon(
+            onPressed: () async {
+              final shouldDelete = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Konto löschen?'),
+                  content: const Text(
+                    'Dein gesamtes Konto wird unwiderruflich gelöscht:\n\n'
+                    '- Alle deine erstellten Schatzsuchen\n'
+                    '- Alle hochgeladenen Fotos\n'
+                    '- Dein Spielfortschritt (XP, Level)\n'
+                    '- Deine Account-Daten\n\n'
+                    'Dieser Vorgang kann nicht rückgängig gemacht werden.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Abbrechen'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.errorColor,
+                      ),
+                      child: const Text('Endgültig löschen'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldDelete == true && context.mounted) {
+                final success = await authProvider.deleteAccount();
+                if (success && context.mounted) {
+                  context.go('/login');
+                } else if (context.mounted && authProvider.error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Fehler: ${authProvider.error}'),
+                      backgroundColor: AppTheme.errorColor,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.delete_forever, size: 18),
+            label: const Text('Konto löschen'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[500],
+            ),
           ),
         ],
       ),

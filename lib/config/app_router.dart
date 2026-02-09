@@ -13,6 +13,7 @@ import '../screens/parent/quest_detail_screen.dart';
 import '../screens/child/child_home_screen.dart';
 import '../screens/child/quest_hunt_screen.dart';
 import '../screens/shared/family_screen.dart';
+import '../screens/shared/privacy_screen.dart';
 import '../screens/shared/profile_screen.dart';
 
 class AppRouter {
@@ -95,6 +96,10 @@ class AppRouter {
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/privacy',
+          builder: (context, state) => const PrivacyScreen(),
         ),
 
         // Root redirect

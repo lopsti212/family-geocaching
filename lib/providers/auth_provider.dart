@@ -141,6 +141,30 @@ class AuthProvider extends ChangeNotifier {
     await _loadUserProfile();
   }
 
+  // Account löschen
+  Future<bool> deleteAccount() async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _supabaseService.deleteUserAccount(_user!.id);
+      await _supabaseService.signOut();
+      _user = null;
+      _family = null;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Logout
   Future<void> signOut() async {
     await _supabaseService.signOut();
