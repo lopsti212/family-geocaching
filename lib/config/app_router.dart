@@ -15,6 +15,7 @@ import '../screens/child/quest_hunt_screen.dart';
 import '../screens/shared/family_screen.dart';
 import '../screens/shared/privacy_screen.dart';
 import '../screens/shared/profile_screen.dart';
+import '../screens/shared/terms_screen.dart';
 
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
@@ -100,6 +101,10 @@ class AppRouter {
         GoRoute(
           path: '/privacy',
           builder: (context, state) => const PrivacyScreen(),
+        ),
+        GoRoute(
+          path: '/terms',
+          builder: (context, state) => const TermsScreen(),
         ),
 
         // Root redirect

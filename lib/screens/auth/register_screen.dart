@@ -20,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _acceptedTerms = false;
   UserRole _selectedRole = UserRole.parent;
 
   @override
@@ -33,6 +34,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bitte akzeptiere die Nutzungsbedingungen'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+      return;
+    }
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.signUp(
@@ -183,7 +194,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+
+                // Nutzungsbedingungen akzeptieren
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: _acceptedTerms,
+                      onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
+                      activeColor: AppTheme.primaryColor,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _acceptedTerms = !_acceptedTerms),
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Ich akzeptiere die ',
+                            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                            children: [
+                              WidgetSpan(
+                                child: GestureDetector(
+                                  onTap: () => context.push('/terms'),
+                                  child: const Text(
+                                    'Nutzungsbedingungen',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppTheme.primaryColor,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const TextSpan(text: ' und die '),
+                              WidgetSpan(
+                                child: GestureDetector(
+                                  onTap: () => context.push('/privacy'),
+                                  child: const Text(
+                                    'Datenschutzerklärung',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppTheme.primaryColor,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
                 // Fehleranzeige
                 if (authProvider.error != null)
